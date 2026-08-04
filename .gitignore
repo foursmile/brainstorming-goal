@@ -1,0 +1,14 @@
+
+__pycache__/
+*.py[cod]
+*$py.class
+
+.superpowers/
+
+temp/
+
+.vscode/
+.idea/
+*.swp
+.DS_Store
+Thumbs.db

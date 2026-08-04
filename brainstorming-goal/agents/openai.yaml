@@ -1,0 +1,3 @@
+interface:
+  display_name: "Brainstorming Goal"
+  short_description: "Explore non-trivial intent, requirements, and design before implementation"
