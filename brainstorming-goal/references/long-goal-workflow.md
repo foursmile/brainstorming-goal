@@ -3,7 +3,7 @@
 
 Load this reference only after the main skill classifies work as **Long Goal** or **Ultra-long Goal**. It defines the executable spec and lean durable-Goal contract. Ultra-long work additionally loads `ultra-long-goal-workflow.md`.
 
-During Goal execution, use staged document loading: package generation/review may read all phase specs; start/resume reads the design doc, optional same-level `progress.md`, and active phase; future phases load at phase entry; completed phases reopen only for drift, contradiction, design amendment, or review findings.
+During Goal execution, use staged document loading: package generation/review may read all phase specs; start/resume reads the design doc, optional same-level `progress.md`, and active phase; future phases load at phase entry; completed phases reopen only for contradiction, design amendment, or review findings.
 
 If the user or the copyable Goal explicitly says `启动前完整读取` and supplies a resolved startup list, that list overrides deferred future-phase loading for startup only. Read and record every listed artifact before the first phase action (`startup_read_set=full`), then continue to use the active-phase entry gate and `staged_read_set` at each transition. Without that explicit directive, defer future phases.
 
@@ -17,23 +17,37 @@ Use this order when instructions or state disagree:
 4. Optional same-level `progress.md`: actual runtime status and next exact action.
 5. Decision, inventory, tool, traceability, evidence, and verification records when explicitly linked: supporting history and proof.
 
+Before a reviewed design exists, the pre-spec decision record is recovery context below user/repository rules, not a normative source. The reviewed design supersedes it.
+
 Lower levels never silently change higher levels. When implementation reveals a normative defect, stop the affected path, record the finding, amend the design doc and impacted phase specs with a version/timestamped decision, update traceability, review the delta, then resume. Runtime progress may advance without rewriting the normative spec.
 
-Reviewed task or repository rules may add stricter review, evidence, UX, tool, or delivery gates for their scope; this strictness inheritance cannot weaken the skill's safety, authorization, evidence, recovery, or blocker rules. If a source path, version, content hash, `task_key`, or same-level `progress.md` identity changes, treat it as identity drift: stop the affected path, compare the changed artifacts, and review before continuing.
+Reviewed task or repository rules may add stricter review, evidence, UX, tool, or delivery gates for their scope; this strictness inheritance cannot weaken the skill's safety, authorization, evidence, recovery, or blocker rules.
 
 ## Spec-generation research gate
 
 Research belongs to the brainstorming/specification stage. Immediately after the initial read-only inspection and route classification, decide whether current external evidence is needed:
 
 - For exploratory, open-ended, niche, emerging, time-sensitive, uncertain, or explicitly reference-seeking work, begin web research before settling the design questions.
-- For medium or large work, search GitHub and authoritative sources for compatible frameworks or reference repositories before freezing architecture, phase specs, or the design spec.
+- For medium or large work, search GitHub and authoritative sources for compatible frameworks or reference repositories before finalizing architecture, phase specs, or the design spec.
 - For simple, stable, local work, record `research_not_required` and do not browse for ceremony.
 
 Record each search in the applicable research spec and feed its conclusions, limits, and adoption/rejection decision into phase/design traceability. Review changed decisions before approval. The later Goal phase consumes this reviewed record; it does not repeat research unless the approved spec explicitly contains a runtime research step.
 
-## Artifact tiers
+## Task identity
 
-Derive one canonical, human-readable `task_key` as `YYYY-MM-DD-<topic>` and never reuse it for an unrelated task. The date is the creation date and does not change on later edits. If the key already exists, append a human-readable scope qualifier or a simple sequence such as `-02`, then use that key for both the design filename and task directory. `<topic>` must be a stable short name using only readable words, digits, Chinese characters, and hyphens; do not use path separators, reserved names, or random-only suffixes. Never append a CRC, content hash, UUID, or random token to an artifact name.
+Derive one canonical, human-readable `task_key` as `YYYY-MM-DD-<topic>` immediately after Long/Ultra classification. Never reuse it for an unrelated task. The creation date stays stable. On collision, append a readable scope qualifier or simple sequence such as `-02`. Use readable words, digits, Chinese characters, and hyphens only; no path separators, reserved names, CRC, UUID, or random token.
+
+## Pre-spec decision record
+
+- Path: `docs/brainstorming/<task_key>-decision-context.md`, unless repository rules choose another non-`superpowers` path.
+- Trigger: Long/Ultra, no `design.md` yet, first load-bearing decision, constraint, evidence item, blocker, or open question appears.
+- Content: status, task key, objective, settled/rejected decisions with reasons, constraints/non-goals, adopted evidence, open blockers, next question, updated time. No transcript or implementation progress.
+- Recovery: after compaction, scan the configured directory for `status: active`; select exact task key, otherwise the unique objective match. Multiple matches are `blocked` until user selection. Then read repository rules and the selected record before questions, research continuation, or drafting.
+- Handoff: before Goal generation, fold active entries into design/phases, review content coverage, mark `superseded` with design path, and exclude it from Goal startup/runtime sources.
+
+Writing this record is brainstorming state capture; it does not authorize implementation.
+
+## Artifact tiers
 
 Default layout:
 
@@ -48,8 +62,9 @@ docs/superpowers/specs/
 
 Repository/user path rules may replace the root, but one task still uses one internally consistent layout. Do not also create default copies under separate `prompts/` trees or a separate top-level `progress/` directory (the deprecated old layout); runtime state uses the single same-level `progress.md` beside `goal.md`.
 
-Identity rules:
+Path rules:
 
+- pre-spec decisions: `docs/brainstorming/<task_key>-decision-context.md`;
 - design path: `docs/superpowers/specs/<task_key>/design.md`;
 - task root: `docs/superpowers/specs/<task_key>/`;
 - phase specs: `docs/superpowers/specs/<task_key>/phases/phase-<number>-<name>.md`;
@@ -57,7 +72,7 @@ Identity rules:
 - runtime progress: optional `docs/superpowers/specs/<task_key>/progress.md` beside `goal.md`;
 - no additional runtime artifact directories.
 
-The design doc records `task_key`, task-root path, Goal path, and spec version. `goal.md` and optional `progress.md` record design identity when present. When exact drift detection is required, store the checksum in document metadata rather than the filename. A path, key, version, or governed checksum mismatch is identity drift: stop, compare, repair the affected artifacts, review, and regenerate Goal when its startup source set changed.
+The design doc records `task_key`, task-root path, Goal path, and spec version. `goal.md` and optional `progress.md` record those same paths and version when present. Any normative content change increments the owning spec version and receives a content-delta review before start/resume. A path, key, or version mismatch means the wrong artifact: stop, compare the actual content, repair the affected artifacts, review, and regenerate Goal when its startup source set changed.
 
 | Artifact | Long Goal | Ultra-long Goal |
 |---|---:|---:|
@@ -99,7 +114,7 @@ Before implementing a large module, pass an architecture-first gate designed for
 - Inspect the current repository and binding constraints first. Then, under the tool-readiness rules, research the architecture of comparable frameworks. When external evidence is useful, consult GitHub or other public source repositories and authoritative documentation. Record source, version, license/security constraints, and the reason for adopting or rejecting each relevant pattern; never copy an implementation blindly.
 - Prohibit a single oversized file or oversized function. Split by responsibility, dependency, and change cadence; maintain high cohesion and low coupling. When the current structure cannot satisfy this, record the smallest boundary refactor and its compatibility impact before implementation.
 - Record gate inputs, design artifacts, load/capacity assumptions, measurable indicators, risks, review findings, and a passed/blocked state. Do not begin the module's coding tasks until the gate passes.
-- Use waterfall stage gates: architecture baseline and research → module contract freeze → core-node implementation and validation → node review and fixes → module integration and stress validation → phase delivery. Do not cross an exit gate early. When new evidence contradicts an earlier decision, return to the affected stage and record the change.
+- Use waterfall stage gates: architecture baseline and research → module contracts → core-node implementation and validation → node review and fixes → module integration and stress validation → phase delivery. Do not cross an exit gate early. When new evidence contradicts an earlier decision, return to the affected stage and record the change.
 
 ### Validation modes
 
@@ -110,7 +125,7 @@ Do not force fake RED/GREEN/REFACTOR steps onto work that is not behavior implem
 | New or changed behavior | TDD: observe correct RED, minimal GREEN, REFACTOR while green |
 | Existing behavior being preserved | Characterization test, then regression evidence |
 | Diagnostic/MCP/tool capability | Capability probe or contract test before dependent work |
-| Read-only discovery or baseline | Reproducible query/command, captured output, identity and interpretation check |
+| Read-only discovery or baseline | Reproducible query/command, captured output, and interpretation check |
 | Documentation or generated protocol | Schema/placeholder/consistency/traceability validation |
 | External effect | Precondition, bounded execution, postcondition, recovery evidence |
 
@@ -132,7 +147,7 @@ The revised design doc is the normative implementation source and must:
 - include an architecture-gate record before every large module: maintainability, stability, robustness, large-scale stress assumptions, comparable-framework sources (including GitHub when used), decomposition boundaries, cohesion/coupling rationale, and the waterfall stage gates;
 - contain no separate implementation-plan handoff.
 
-Phase consistency gate: before Goal generation, compare every phase file against the design doc phase registry. Reject orphan phase files, missing reciprocal links, mismatched task keys or versions, phase requirements absent from design traceability, and phase exit gates not represented in the design doc. During execution, record predecessor evidence before advancing `active_phase`; a numbered phase filename list alone is insufficient.
+Phase consistency gate: before Goal generation, compare the actual content of every phase file against the design doc phase registry. Reject orphan phase files, mismatched task keys or versions, content that contradicts the design, phase requirements absent from design traceability, and phase exit gates not represented in the design doc. During execution, record predecessor evidence before advancing `active_phase`; a numbered phase filename list alone is insufficient.
 
 After the draft exists, run the design gap grill (see the brainstorming-goal SKILL.md Long/Ultra Goal extension → Design gap grill section). Apply each material answer to the design doc and affected phase spec before continuing. Preserve unanswered load-bearing decisions as blockers.
 
@@ -148,7 +163,7 @@ Classify each bounded task before dispatch:
 |---|---|---|
 | Simple | `luna_worker` (gpt-5.6-luna, max) | exploration, code search, documentation, simple bounded implementation |
 | Medium | `terra_worker` (gpt-5.6-terra, high) | single-module implementation, tests, ordinary analysis |
-| High-difficulty | `sol_worker` (gpt-5.6-sol, max, workspace-write) | cross-module changes, interface/dependency shifts, risky migrations |
+| High-difficulty | `sol_worker` (gpt-5.6-sol, xhigh, workspace-write) | cross-module changes, interface/dependency shifts, risky migrations |
 | Complex review/decision | `sol_advisor` (gpt-5.6-sol, high, read-only) | architecture, security, compatibility, high-impact decisions |
 
 Independent tasks and workflows may run in parallel only when dependency-ready and write-disjoint. Every brief states model, scope, inputs, outputs, write boundary, validation, evidence path, fallback, and terminal state. Main context verifies returned artifacts; a report is a claim until checked. If model/channel unavailable, record `agent_unavailable` and use a suitable fallback or main context.
@@ -184,7 +199,7 @@ When `progress.md` exists, it remains compact and contains:
 
 - Goal/spec version, active phase/task ID, state, owner, and current acceptance gate;
 - last verified evidence and relevant artifact IDs;
-- blockers/retry identity and counts;
+- blockers/retry counts;
 - active authorization/write-scope exceptions;
 - exact next evidence-producing action or command;
 - no extra runtime links;
@@ -196,9 +211,9 @@ After compaction or interruption:
 
 1. Read repository rules and design version.
 2. Read optional `progress.md` and only explicitly linked evidence.
-3. Verify workspace/revision, changed files, locks, relevant process health, authorization, and artifact identity.
+3. Verify workspace/revision, changed files, locks, relevant process health, authorization, artifact paths/versions, and any content delta since the last review.
 4. If records disagree, apply source precedence and repair state before implementation.
-5. Run the recorded next evidence-producing action. Never reconstruct completed work from memory or rerun an identity-matching artifact without invalidation.
+5. Run the recorded next evidence-producing action. Never reconstruct completed work from memory; rerun from saved evidence only.
 
 Before entering a later phase, read predecessor completion record and verify exit status plus next-phase entry evidence. Missing completion record blocks transition.
 
@@ -212,9 +227,9 @@ Repository/user path rules override these defaults.
 
 The Goal links source specs, precedence, phase order, validation, review, recovery, authorization, delivery, and completion gates. Optional `progress.md` records runtime state.
 
-Resolve the installed brainstorming-goal skill root from the loaded `SKILL.md`, then read `references/caveman/SKILL.md` and `references/pua/SKILL.md` from that same root. After reading, Caveman is enabled by default for the active Long/Ultra Goal; `normal mode` or `stop caveman` disables it. PUA's own trigger is scenario-based per its skill; in addition, this skill applies a periodic focus check every 20 minutes, run only at a safe command/tool boundary — pause during active commands/tests/reviews and run one catch-up check after resuming. These skills cannot override user/repository rules, spec requirements, authorization, evidence, retry caps, blockers, or terminal states. No derived profiles, absolute paths, versions, or SHA-256 fields are required.
+Resolve the installed brainstorming-goal skill root from the loaded `SKILL.md`, then read `references/caveman/SKILL.md` and `references/pua/SKILL.md` from that same root. After reading, Caveman is enabled by default for the active Long/Ultra Goal; `normal mode` or `stop caveman` disables it. PUA's own trigger is scenario-based per its skill; in addition, this skill applies a periodic focus check every 20 minutes, run only at a safe command/tool boundary — pause during active commands/tests/reviews and run one catch-up check after resuming. These skills cannot override user/repository rules, spec requirements, authorization, evidence, retry caps, blockers, or terminal states. No derived profiles, absolute paths, or versions are required.
 
-Generate the user prompt from `goal-prompt-template.md` and save the candidate/final artifact as `goal.md`. Replace placeholders only with values established by the specs. Do not copy the design doc into `goal.md`; link its resolved identity. A prompt draft does not create a Goal. Existing explicit authorization to execute the unchanged scope counts as start authorization; otherwise ask once to start or resume.
+Generate the user prompt from `goal-prompt-template.md` and save the candidate/final artifact as `goal.md`. Replace placeholders only with values established by the specs. Do not copy the design doc into `goal.md`; link its resolved path. A prompt draft does not create a Goal. Existing explicit authorization to execute the unchanged scope counts as start authorization; otherwise ask once to start or resume.
 
 Review the Goal and phase specs against the design doc. Exercise interruption/resume, failed/cancelled work, blocked dependency, missing evidence/tool/reviewer, conflicting edits, authorization change, spec amendment, and final integration. Every state must reach a recorded completed, cancelled, blocked, unavailable, or superseded terminal state.
 
@@ -226,7 +241,7 @@ Final handoff is minimal: when Goal review is `approved`, output exactly one cop
 - When a required capability remains missing, consult authoritative documentation and maintained public source repositories for a compatible MCP or equivalent; evaluate license, security, versioning, maintenance, and evidence export.
 - Implement the smallest repository-scoped capability only when a named acceptance need requires it or repeated evidence shows existing tools are insufficient. Add a probe/test, contract, failure modes, and saved evidence first.
 - Do not perform an acceptance mode downgrade. A requirement for a real UI, external effect, screenshot/capture, or current evidence cannot be replaced by a mock, static page, headless smoke test, synthetic result, stale artifact, or prose claim. If the required mode is unavailable, preserve the affected item as `tool_unavailable`, `evidence_unavailable`, `blocked`, or `unverified`.
-- Use retry identity, limit, materially changed hypothesis predicate, stop condition, and unblock condition. Stop unchanged retries at the declared cap.
+- Use retry limit, materially changed hypothesis predicate, stop condition, and unblock condition. Stop unchanged retries at the declared cap.
 - Repeated failure does not automatically justify a new skill. Crystallize a procedure only after the same multi-step workflow has occurred at least three times, has stable inputs/outputs, is likely reusable, and has validation evidence. Otherwise record a diagnostic/recovery entry.
 - Use bounded waits with observation window, health check, protected-process rule, and recovery action. No blind long waits.
 - Deliver one scoped task/phase only after review, fixes, rerun evidence, and progress update. The repository/user determines the actual submission mechanism; never assume one or mix unrelated changes.

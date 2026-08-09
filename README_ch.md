@@ -39,7 +39,7 @@ cp -R ./brainstorming-goal/brainstorming-goal ~/.codex/skills/brainstorming-goal
 |---|---|---|---|
 | `luna_worker` | gpt-5.6-luna, max | 简单探索/搜索/文档/简单实现 | workspace-write |
 | `terra_worker` | gpt-5.6-terra, high | 中等单模块实现/测试/常规分析 | workspace-write |
-| `sol_worker` | gpt-5.6-sol, max | 高难度实现/跨模块变更/风险迁移 | workspace-write |
+| `sol_worker` | gpt-5.6-sol, xhigh | 高难度实现/跨模块变更/风险迁移 | workspace-write |
 | `luna_reviewer` | gpt-5.6-luna, max | 简单节点轻量首审 | read-only |
 | `sol_advisor` | gpt-5.6-sol, high | 复杂架构/安全/兼容审查与高影响决策 | read-only |
 
@@ -110,17 +110,17 @@ flowchart TD
 | 维度 | 原始常见流程 | 本项目流程 |
 | --- | --- | --- |
 | 简单任务 | 都进设计流程 | 明确的低风险机械任务立即退出，不主动调用本技能，除非用户显式要求 |
-| 外部研究 | 实现阶段临时搜 | 分类后按复杂度自动联网（不问用户），研究证据回写 spec 后再冻结设计 |
+| 外部研究 | 实现阶段临时搜 | 分类后按复杂度自动联网（不问用户），研究证据回写 spec 后再定稿并审查设计 |
 | 文档结构 | 设计后另生 plan | spec 本身包含有序实施步骤，禁止再创建独立 plan 文档 |
 | 长任务拆分 | 单份设计文档 | 按需求、依赖和审查边界生成 phase specs，再生成 design spec |
 | 长任务目录 | 产物散在多根目录 | design.md 收入 `task_key/` 任务目录内（与 goal.md 同目录），普通 `*-design.md` 仍平铺 `specs/` 根；运行时记录只有 `goal.md` 旁单个 `progress.md` |
-| 大模块设计 | 直接分任务编码 | 先通过架构先行门，再冻结模块合同并进入节点开发 |
+| 大模块设计 | 直接分任务编码 | 先通过架构先行门，再定义模块合同并进入节点开发 |
 | 需求追问 | 普通问答 | 阶段规格和 design 草案完成后才运行 bounded grill；grill 完成后才进入 spec 自审和 Goal 审查 |
 | 子 Agent | 通用执行 | 五档全名路由：简单→`luna_worker`、中等→`terra_worker`、高难度实现→`sol_worker`、轻量首审→`luna_reviewer`(只读)、复杂审查/决策→`sol_advisor`(只读)；各档按角色定制停止条件与升级路径，主上下文负责集成与最终验收 |
 | Review | 末尾才审查 | 核心节点、阶段和最终验收分层审查；修复、复测、再审后才能继续 |
-| 上下文恢复 | 靠对话历史 | 用 `progress.md` 单文件恢复精确下一步，无额外运行时目录 |
+| 上下文恢复 | 靠对话历史 | brainstorming 用精简的 spec 前决策记录，Goal 执行只用一个 `progress.md` |
 | 工具不足 | 临时处理 | 先过 tool-readiness gate；必要时检索或实现最小 MCP/等效能力 |
-| 证据 | 测试通过即可 | 记录输入、版本、环境、命令、路径、哈希和失效条件，避免复用过期证据 |
+| 证据 | 测试通过即可 | 记录审查和失效判断所需的结果影响输入，不强制文档哈希 |
 | 长期专注 | 靠不断提醒 | PUA 自身按场景触发（失败 2+ 次等）；本技能另加每 20 分钟周期聚焦校准（安全边界、活动命令/测试/审查期间暂停、恢复后补检），无变化时静默 |
 | Goal 生成 | 手工拼模板 | AI 根据已审查 spec 生成一整段任务专属 Goal，并按用户输入语言生成（中文提问→简体中文；否则英文） |
 | 用户审阅 | 等用户审阅 | 不设用户审阅门禁；写完 spec/Goal 包后直接进入自审与实现 |
@@ -146,7 +146,7 @@ flowchart TD
 |---|---|---|---|
 | 简单探索/搜索/文档/简单实现 | `luna_worker` | gpt-5.6-luna, max | 快速闭合简单包，最小 diff；超出简单则交回 |
 | 中等单模块实现/测试/常规分析 | `terra_worker` | gpt-5.6-terra, high | 聚焦单模块；跨模块/高难度则升级 sol |
-| 高难度实现/跨模块变更/风险迁移 | `sol_worker` | gpt-5.6-sol, max | 谨慎改、保兼容；超包/不可逆则停并带证据上报 |
+| 高难度实现/跨模块变更/风险迁移 | `sol_worker` | gpt-5.6-sol, xhigh | 谨慎改、保兼容；超包/不可逆则停并带证据上报 |
 | 简单节点轻量首审 | `luna_reviewer` | gpt-5.6-luna, max | **只读**，查常识bug/边界/静态泄漏/重复接口/测试/过大/性能UIUX/整理；深层升级 sol_advisor |
 | 复杂架构/安全/兼容审查与高影响决策 | `sol_advisor` | gpt-5.6-sol, high | **只读**，给决策建议与证据，不实现 |
 
@@ -227,6 +227,8 @@ spec 通过自检后直接进入开发，不再生成 writing-plans 文档。
 
 Long Goal 和 Ultra-long Goal 按需求、依赖和 Review 边界拆分 phase spec，而不是按文件数量平均切块。design spec 汇总端到端架构、阶段顺序、接口合同、验收映射和恢复规则，并成为实施阶段的规范事实源。
 
+Long/Ultra 分类后先确定 `task_key`。`design.md` 生成前，首次出现承重决策、约束、证据、blocker 或开放问题时创建 `docs/brainstorming/<task_key>-decision-context.md`，只存精简决策上下文。压缩后按 task key 或唯一目标匹配 active 记录；Goal 生成前写入 design/phases、审查覆盖、标记 `superseded`，且不进入运行来源。
+
 每个长期任务使用一个稳定的 `task_key = YYYY-MM-DD-<topic>`：
 
 ```text
@@ -238,14 +240,14 @@ docs/superpowers/specs/
     └── progress.md (optional runtime record)
 ```
 
-design 和任务目录必须使用同一个 `task_key` 并互相记录路径和版本。同名任务优先增加人类可读的范围词，没有语义差异时再使用 `-02` 这类简单序号；创建日期和目录名在后续修改中保持稳定。`<topic>` 使用稳定、可读、无路径分隔符的短主题名（允许中文、字母、数字和连字符），不得使用保留目录名或仅靠随机字符区分。文件名和目录名禁止加入 CRC、SHA、UUID 或随机短码。哈希只在需要检测内容漂移或验证证据完整性时作为文档元数据保存。`design.md` 与任务目录同级、收入 `task_key/` 内，方便发现；普通 `*-design.md` 仍平铺在 `specs/` 根目录；阶段 spec、Goal 和运行记录则不会污染根目录。运行时记录只有 `goal.md` 旁单个可选 `progress.md`，不创建额外的运行时目录或账本子树。
+design 和任务目录必须使用同一个 `task_key`，并记录适用的路径和版本。任何规范内容变更都要升级版本，并针对实际内容差异进行审查；不强制文档哈希。同名任务优先增加人类可读的范围词，没有语义差异时再使用 `-02` 这类简单序号；创建日期和目录名在后续修改中保持稳定。`<topic>` 使用稳定、可读、无路径分隔符的短主题名（允许中文、字母、数字和连字符），不得使用保留目录名或仅靠随机字符区分。文件名和目录名禁止加入 CRC、SHA、UUID 或随机短码。`design.md` 与任务目录同级、收入 `task_key/` 内，方便发现；普通 `*-design.md` 仍平铺在 `specs/` 根目录；阶段 spec、Goal 和运行记录则不会污染根目录。运行时记录只有 `goal.md` 旁单个可选 `progress.md`，不创建额外的运行时目录或账本子树。
 
 每个大模块编码前必须通过架构先行门：
 
 - 先明确模块边界、依赖方向、状态流、扩展点、资源上限、故障隔离、可观测性和回滚；
 - 使用起手研究门已经形成的 GitHub/权威资料证据；发现新的承重未知项时返回研究门并更新 spec；
 - 禁止形成单一超大文件或超大函数，按职责和变化节奏维持高内聚、低耦合；
-- 采用阶段门推进：架构基线 → 合同冻结 → 核心节点 → 节点审查 → 模块集成和压力验证 → 阶段交付。
+- 采用阶段门推进：架构基线 → 模块合同 → 核心节点 → 节点审查 → 模块集成和压力验证 → 阶段交付。
 
 ### 5. Design Spec 缺口审问
 
@@ -275,7 +277,7 @@ phase specs 和 design draft 完成后运行 design 缺口访谈（内联于 SKI
 
 最终产物是一整段可直接复制的 Goal 提示词。它必须内嵌已经解析好的启动文件清单、可移植路径解析规则和读取顺序；用户不需要再手动拼接绝对路径或替换占位符。生成前的 brainstorming 输入读取门与 Goal 启动/恢复时的 source set 是两个独立阶段。
 
-生成阶段还要维护 requirement-to-proof 覆盖关系：每个适用规范条目都映射到 Goal 规则、实现目标、验证、Review、证据和终态；缺少映射时记录 `coverage_gap`。`task_key`、路径、版本或哈希变化属于 identity drift，必须先停下比较、修复 design 与任务目录的双向链接并重新审查。任务 spec 可以增加更严格的 Review、证据、工具、UX 或交付门禁，但不能降低技能的安全和授权边界；验收要求真实 UI、截图、外部效果或当前证据时，不得降级为 mock、静态页面、headless smoke、合成结果或旧工件。
+生成阶段还要维护 requirement-to-proof 覆盖关系：每个适用规范条目都映射到 Goal 规则、实现目标、验证、Review、证据和终态；缺少映射时记录 `coverage_gap`。`task_key`、路径或版本不匹配表示来源集错误；规范内容变更必须升级版本，并在恢复执行前审查实际内容差异及受影响的 traceability。任务 spec 可以增加更严格的 Review、证据、工具、UX 或交付门禁，但不能降低技能的安全和授权边界；验收要求真实 UI、截图、外部效果或当前证据时，不得降级为 mock、静态页面、headless smoke、合成结果或旧工件。
 
 Long Goal 和 Ultra-long Goal 的实际 Goal 必须包含原始技能启用条款：启动前从当前安装的技能目录读取 `references/caveman/SKILL.md` 和 `references/pua/SKILL.md`。PUA 自身按场景触发（失败 2+ 次等）；本技能另加每 20 分钟周期聚焦校准——只在安全命令/工具边界执行，活动命令/测试/审查期间暂停，恢复后补检一次。不维护派生 profile、绝对机器路径、版本或 SHA-256 登记。
 
@@ -328,7 +330,7 @@ Long Goal 和 Ultra-long Goal 的实际 Goal 必须包含原始技能启用条�
 - 显式授权和写入范围（允许、仅测试、只读、生成、外部与禁止目标）；
 - requirement → implementation → validation → review → evidence 的 traceability；
 - 工具能力记录与证据索引（作为显式链接的支持性记录）；
-- 昂贵基线的身份、哈希和失效条件；
+- 昂贵基线的结果影响输入和失效条件；
 - 长期进程的健康探针、观察窗口和恢复命令；
 - 每个阶段退出的独立第二遍检查；
 - 最终完整性验证与未闭环项扫描。
@@ -388,7 +390,7 @@ docs/superpowers/specs/
     └── progress.md (optional runtime record)
 ```
 
-文件名只是示例；实际路径、日期格式和文档元数据始终服从目标仓库规则。不同 Goal 必须使用唯一且人类可读的 `task_key`，不能复用其他任务的目录，也不使用 CRC/哈希制造唯一性。运行时记录只有 `goal.md` 旁单个可选 `progress.md`，不建 `progress/` 子目录或账本树；工作项清单、决策记录、可追溯性、证据索引等作为 spec 内章节或显式链接的支持性记录，而非强制目录。
+文件名只是示例；实际路径、日期格式和文档元数据始终服从目标仓库规则。不同 Goal 必须使用唯一且人类可读的 `task_key`，不能复用其他任务的目录，也不使用 CRC/哈希制造唯一性。运行时记录只有 `goal.md` 旁单个可选 `progress.md`，不建 `progress/` 子目录或账本树；工作项清单、可追溯性、证据索引仍作为 spec 内章节或显式链接；条件性 spec 前决策记录是唯一独立的 `docs/brainstorming/` 产物。
 
 ## 目录结构
 

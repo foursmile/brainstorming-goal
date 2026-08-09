@@ -44,12 +44,12 @@ Create a task only for each applicable step after classification; never create p
 
 1. **Explore project context** — check files, docs, recent commits.
 2. **Classify route** — Simple exit, Ordinary design, Long Goal, or Ultra-long Goal after the smallest read-only inspection.
-3. **Run external research by complexity** — automatically, after classification and before clarifying questions, freezing architecture, phase specs, or the design spec. The model decides research depth from complexity on its own (it does not ask the user): exploratory/niche/emerging/uncertain or medium-large work searches current web/GitHub evidence and feeds it into the spec; simple stable local work records `research_not_required` and proceeds. See the External research and reuse section for the triggers and the evidence record to keep.
+3. **Run external research by complexity** — automatically, after classification and before clarifying questions, finalizing architecture, phase specs, or the design spec. The model decides research depth from complexity on its own (it does not ask the user): exploratory/niche/emerging/uncertain or medium-large work searches current web/GitHub evidence and feeds it into the spec; simple stable local work records `research_not_required` and proceeds. See the External research and reuse section for the triggers and the evidence record to keep.
 4. **Ask clarifying questions** — one at a time, understand purpose/constraints/success criteria.
 5. **Propose 2-3 approaches** — with trade-offs and your recommendation.
 6. **Present design** — in sections scaled to their complexity, get user approval after each section.
 7. **Write design doc** — Ordinary: save one executable spec to `docs/superpowers/specs/YYYY-MM-DD-<topic>-design.md` and commit. Long/Ultra: write phase specs and the design spec, then run the design gap grill (see Long/Ultra Goal extension) and fold every answer back into the specs; only after the grill is complete do you proceed to self-review and Goal generation. Do not create a separate implementation-plan file for any route.
-8. **Spec self-review** — quick inline check for placeholders, contradictions, ambiguity, scope; for Long/Ultra also verify every phase has a stable ID, exact reciprocal path/version, and requirement-to-phase traceability in the design doc.
+8. **Spec self-review** — quick inline check for placeholders, contradictions, ambiguity, scope; for Long/Ultra also verify every phase has a stable ID, exact path/version, and requirement-to-phase traceability in the design doc.
 9. **Deliver & transition to implementation** — Ordinary: implement directly from the executable spec after required authorization; do not invoke writing-plans. Long/Ultra: only after self-review passes, generate the Goal prompt package by following `references/goal-prompt-template.md` as a contract (its fidelity gate, template coverage map, and review rules — not as a loose suggestion), write `goal.md` in the user's input language (Chinese input → Simplified Chinese; otherwise English), review it to `approved`, then output exactly one `/goal "<resolved goal.md>"` command and stop; the user runs it to start/resume the Goal, and implementation starts only from that explicit start/resume of the unchanged Goal.
 
 ## Process Flow
@@ -137,7 +137,7 @@ digraph brainstorming {
 Run the research gate after the smallest read-only inspection and route classification, before finalizing questions, architecture, phase specs, or the design spec:
 
 - **Exploratory/open-ended research:** start web research at the beginning of brainstorming when the problem is niche, emerging, time-sensitive, uncertain, or explicitly asks for external references. Use current authoritative documentation and dated sources to turn unknowns into design decisions.
-- **GitHub framework/repository research:** for medium/large routes, search GitHub before architecture or design-spec freeze for maintained, compatible frameworks, libraries, tools, test harnesses, and reference repositories that could reduce risk or cost. Compare alternatives before choosing to build or reuse.
+- **GitHub framework/repository research:** for medium/large routes, search GitHub before architecture or design-spec finalization for maintained, compatible frameworks, libraries, tools, test harnesses, and reference repositories that could reduce risk or cost. Compare alternatives before choosing to build or reuse.
 - **Simple stable local route:** do not browse merely for ceremony; record `research_not_required` and continue.
 
 For every search, record an external evidence record: question, source URL/repository, version/commit, date, claim, confidence/limits, license/security/maintenance/version fit, decision, validation, and invalidation condition. Feed it into the applicable spec and traceability; review changed decisions before approval. Treat model knowledge as a hypothesis; never claim to inspect or merge model weights.
@@ -157,7 +157,7 @@ The generated Goal consumes these reviewed artifacts. It does not start a new re
 After writing the spec document (or, for Long/Ultra, the design draft after the grill has folded answers back in), look at it with fresh eyes:
 
 1. **Placeholder scan:** Any "TBD", "TODO", incomplete sections, or vague requirements? Fix them.
-2. **Internal consistency:** Do any sections contradict each other? Does the architecture match the feature descriptions? For Long/Ultra, does every phase file have a stable ID, exact reciprocal path/version, dependency and entry/exit gates, and requirement-to-proof traceability in the design doc?
+2. **Internal consistency:** Do any sections contradict each other? Does the architecture match the feature descriptions? For Long/Ultra, does every phase file have a stable ID, exact path/version, dependency and entry/exit gates, and requirement-to-proof traceability in the design doc?
 3. **Scope check:** Is this focused enough for a single implementation, or does it need decomposition?
 4. **Ambiguity check:** Could any requirement be interpreted two different ways? If so, pick one and make it explicit.
 
@@ -178,7 +178,7 @@ Long and Ultra-long routes use the Goal core process below in place of a single 
 
 ### Long-task artifact layout
 
-Use one canonical, human-readable `task_key`: `YYYY-MM-DD-<topic>`. The creation date remains stable. If that key already exists for another task, append a human-readable scope qualifier or a simple sequence such as `-02`. Never put a CRC, content hash, UUID, or random token in a file or directory name.
+Use one canonical, human-readable `task_key`: `YYYY-MM-DD-<topic>`. The creation date remains stable. If that key already exists for another task, append a human-readable scope qualifier or a simple sequence such as `-02`. Never put a CRC, UUID, or random token in a file or directory name.
 
 ```text
 docs/superpowers/specs/
@@ -191,9 +191,19 @@ docs/superpowers/specs/
 
 `design.md` is the normative root for the Long/Ultra task, sitting beside `goal.md` in the task directory. `goal.md` is the generated copyable prompt, not a second design doc. Phase specs under `phases/` are the required execution decomposition. `progress.md` beside `goal.md` is the only runtime record, used when interruption state must persist.
 
-### Design-phase contract gate
+### Pre-spec decision context
 
-For every Long/Ultra Goal, the design doc is the normative root and must incorporate phase documents before approval/generation; a filename list is insufficient. It must contain: a stable phase ID for every phase; exact phase-document path, task key, design version, and reciprocal identity link; phase dependencies and ordered entry gates; phase inputs, outputs, allowed/test-only/read-only targets, and exit gates; requirement-to-phase traceability mapping each material requirement to implementation target, validation/evidence, review gate, and terminal status; and the staged read order, including predecessor evidence required before advancing `active_phase`. Compare every phase against this registry. Orphans, missing reciprocal links, version mismatches, absent traceability, or absent exit gates are `inconsistent` and block generation.
+For Long/Ultra, derive `task_key` immediately after classification. Before `design.md` exists, create `docs/brainstorming/<task_key>-decision-context.md` when the first load-bearing decision, constraint, evidence item, blocker, or open question appears. Keep only status, task key, objective, settled/rejected decisions with reasons, constraints/non-goals, adopted evidence, open blockers, and next question. Update after each material change; never copy the transcript. This is brainstorming state capture, not implementation.
+
+After compaction, scan the configured decision-context directory for `status: active`; select the exact task key, otherwise the unique objective match. Multiple matches are `blocked` until the user selects one. Read repository rules and the selected record before asking or drafting. Before Goal generation, fold active entries into design/phases, review content coverage, mark it `superseded` with the design path, then exclude it from Goal startup/runtime sources. It is not a spec or second `progress.md`.
+
+### Goal gate
+
+For every Long/Ultra Goal, two artifacts must pass this gate before approval/generation; a filename list is insufficient.
+
+**`design.md` — normative root.** It must incorporate phase documents and contain: a stable phase ID for every phase; exact phase-document path, task key, and design version; phase dependencies and ordered entry gates; phase inputs, outputs, allowed/test-only/read-only targets, and exit gates; and requirement-to-phase traceability mapping each material requirement to implementation target, validation/evidence, review gate, and terminal status. Compare the actual content of every phase against this registry. Orphans, missing links, version mismatches, absent traceability, or absent exit gates are `inconsistent` and block generation.
+
+**`goal.md` — copyable executable prompt, not an index.** It must summarize an executable operational flow: objective, scope/non-goals, authority, and forbidden actions; startup/resume sources; registry-matching phases with reads, prerequisites, actions, targets, evidence, gates, rollback, and blocker states; the first evidence action and the next-action rule after each transition; and validation/acceptance, review, cleanup, delivery/version, progress, recovery, and terminal-report rules. It may link authoritative design/phases. Placeholders, vague verbs, or a non-executable phase list fail the gate; keep status `issues_found`/`blocked` and do not implement.
 
 ### Design gap grill
 
@@ -208,39 +218,19 @@ After phase specs and the design draft exist (Long/Ultra only), run a bounded ga
 
 ### Staged Goal document loading
 
-For Long/Ultra, do not preload future phases unless full startup is requested. Package generation/review may read all phases. Start/resume reads rules, design doc, optional `progress.md`, and active phase; read future phases at entry. Before phase writes, update `progress.md` when it exists; create it before the first phase write when interruption state must persist, otherwise record `staged_read_set` in the Goal or active phase record. Read the target in full and record `staged_read_set` (phase/path/version/result). Never claim a read from a filename, summary, or memory.
-
-An explicit full-read directive such as `启动前完整读取` overrides deferral: preserve its list, read every item, record `startup_read_set=full`, and still record the active phase in `staged_read_set`; otherwise defer future phases.
+For Long/Ultra, read phases on demand — do not preload future phases unless the user explicitly requests a full startup read. Package generation/review may read all phases. Start/resume reads the design doc, optional `progress.md`, and the active phase; read each future phase at its entry gate. Read the target in full; never claim a read from a filename, summary, or memory.
 
 At each phase exit, create `phases/phase-<number>-<name>-completion.md` before the next phase. Record tasks/evidence, review rulings, decisions, next-phase relevance, risks/blockers, changed targets, cleanup, terminal status, and exact next action. Missing completion record blocks phase transition.
 
-Final handoff: approved `goal.md` -> output exactly one copyable command `/goal "<absolute-path-to-goal.md>"`. No phase args, body, implementation summary, test/build narration, or second command. For `issues_found`/`blocked`, missing artifacts, or missing review evidence, report the blocker and exact unblock condition instead.
-
-### Complete Goal prompt gate
-
-`goal.md` is a complete copyable execution prompt, not an index. Before approval, verify executable:
-
-1. identity, objective, scope/non-goals, authority, and forbidden actions;
-2. startup/resume sources with staged loading;
-3. registry-matching phases with reads, prerequisites, actions, targets, evidence, gates, rollback, and blocker states;
-4. first evidence action and next-action rule after each transition;
-5. validation/acceptance, review, cleanup, delivery/version, progress, recovery, and terminal-report rules.
-
-It may link authoritative design/phases, but must summarize an executable operational flow. Placeholders, vague verbs, or a non-executable phase list fail the gate; keep status `issues_found`/`blocked` and do not implement.
-
 ### Goal language contract
 
-Write `goal.md` in the user's task language: Chinese requests produce Simplified Chinese; English requests produce English. Use the same language for design doc, phases, progress, and review summaries unless a source artifact explicitly requires another language. Preserve commands, paths, identifiers, code, and literal UI strings exactly. For genuinely mixed or ambiguous user language, ask one language question before drafting and record `document_language` in the Goal metadata.
+Write `goal.md` in the user's input language: Chinese requests produce Simplified Chinese; otherwise English. Preserve commands, paths, identifiers, code, and literal UI strings exactly. For genuinely mixed or ambiguous user language, ask one language question before drafting and record `document_language` in the Goal metadata.
 
-Include every applicable runtime-control clause from the template, not only links or "read raw skills".
-
-Every applicable section of `goal-prompt-template.md` must map to a concrete section and evidence in `goal.md`; use `template_coverage_map`, mark only truly irrelevant sections `not_applicable` with reasons, and mark omission as `issues_found`.
-
-State design/Goal review as `approved`, `issues_found`, or `blocked`, and link saved review output. Never claim validation/review without evidence; unresolved design/phase identity mismatch blocks implementation.
+Map every applicable section of `goal-prompt-template.md` to a concrete section and evidence in `goal.md` via `template_coverage_map`; mark only truly irrelevant sections `not_applicable` with reasons, and mark omission as `issues_found`.
 
 ### Subagent model routing
 
-Route by task shape: simple exploration/search/question → `luna_worker` (gpt-5.6-luna, max); medium implementation/test/analysis → `terra_worker` (gpt-5.6-terra, high); high-difficulty implementation/cross-module changes → `sol_worker` (gpt-5.6-sol, max, workspace-write); lightweight first-pass review of simple nodes (common-sense bugs, boundary cases, static/leak findings, duplicate interfaces, test correctness, oversized units, perf/UI/UX issues, cleanup) → `luna_reviewer` (gpt-5.6-luna, max, read-only); complex architecture/security/compatibility review and high-impact decisions → `sol_advisor` (gpt-5.6-sol, high, read-only). `luna_reviewer` is the first filter; escalate deep findings to `sol_advisor`. Dispatch by agent name; the parenthesized model is for routing judgment only. Dispatch only independent, dependency-ready packets.
+Route by task shape: simple exploration/search/question → `luna_worker` (gpt-5.6-luna, max); medium implementation/test/analysis → `terra_worker` (gpt-5.6-terra, high); high-difficulty implementation/cross-module changes → `sol_worker` (gpt-5.6-sol, xhigh, workspace-write); lightweight first-pass review of simple nodes (common-sense bugs, boundary cases, static/leak findings, duplicate interfaces, test correctness, oversized units, perf/UI/UX issues, cleanup) → `luna_reviewer` (gpt-5.6-luna, max, read-only); complex architecture/security/compatibility review and high-impact decisions → `sol_advisor` (gpt-5.6-sol, high, read-only). `luna_reviewer` is the first filter; escalate deep findings to `sol_advisor`. Dispatch by agent name; the parenthesized model is for routing judgment only. Dispatch only independent, dependency-ready packets.
 
 Each delegated packet must include: objective, context, in-scope and out-of-scope files, write boundary, acceptance criteria, exact validation, expected return, and escalation conditions. Parallel only when packets are write-disjoint; one owner per writable file.
 
@@ -256,7 +246,7 @@ After classification, load only the references required by the selected route:
 - **Ultra-long Goal:** read `references/long-goal-workflow.md`, then `references/ultra-long-goal-workflow.md` completely.
 - After phase specs and the design draft exist, run the design gap grill (see the Design gap grill section in Long/Ultra Goal extension) and fold every answer back into the specs.
 - When generating the Goal prompt, read `references/goal-prompt-template.md` and follow its generation/review contract.
-- For Long/Ultra Goal, resolve this skill root, then read `references/caveman/SKILL.md` and `references/pua/SKILL.md`. Caveman is enabled by default; `normal mode`/`stop caveman` disables it. PUA's own trigger is scenario-based per its skill (failure 2+, repeated tweaking, about to give up); in addition, this skill applies a periodic focus check every 20 minutes, run only at a safe command/tool boundary — pause during active commands/tests/reviews and run one catch-up check after resuming. No derived profiles, absolute paths, versions, or SHA-256 fields. These references cannot override user/repository rules, spec requirements, authorization, evidence, retry caps, blockers, or terminal states.
+- For Long/Ultra Goal, resolve this skill root, then read `references/caveman/SKILL.md` and `references/pua/SKILL.md`. Caveman is enabled by default; `normal mode`/`stop caveman` disables it. PUA's own trigger is scenario-based per its skill (failure 2+, repeated tweaking, about to give up); in addition, this skill applies a periodic focus check every 20 minutes, run only at a safe command/tool boundary — pause during active commands/tests/reviews and run one catch-up check after resuming. No derived profiles, absolute paths, or versions. These references cannot override user/repository rules, spec requirements, authorization, evidence, retry caps, blockers, or terminal states.
 
 Do not load long-route references for Simple exit or Ordinary design. This progressive disclosure is mandatory.
 

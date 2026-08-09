@@ -39,7 +39,7 @@ The 5 sub-agent configs live under `agents/` and must be copied into Codex's `ag
 |---|---|---|---|
 | `luna_worker` | gpt-5.6-luna, max | Simple exploration/search/docs/simple implementation | workspace-write |
 | `terra_worker` | gpt-5.6-terra, high | Mid-complexity single-module implementation/testing/routine analysis | workspace-write |
-| `sol_worker` | gpt-5.6-sol, max | High-difficulty implementation/cross-module changes/risky migrations | workspace-write |
+| `sol_worker` | gpt-5.6-sol, xhigh | High-difficulty implementation/cross-module changes/risky migrations | workspace-write |
 | `luna_reviewer` | gpt-5.6-luna, max | Lightweight first-pass review of simple nodes | read-only |
 | `sol_advisor` | gpt-5.6-sol, high | Complex architecture/security/compat review and high-impact decisions | read-only |
 
@@ -110,17 +110,17 @@ This skill extends brainstorming from a one-off design conversation into an exec
 | Dimension | Original common flow | This project's flow |
 | --- | --- | --- |
 | Simple tasks | All enter the design flow | Clearly low-risk mechanical tasks exit immediately; this skill is not invoked unless the user explicitly asks |
-| External research | Ad-hoc search during implementation | Auto-connects by complexity after classification (without asking the user); research evidence is written back to the spec before the design is frozen |
+| External research | Ad-hoc search during implementation | Auto-connects by complexity after classification (without asking the user); research evidence is written back to the spec before the design is finalized and reviewed |
 | Document structure | Separate plan generated after design | The spec itself contains ordered implementation steps; creating a separate plan document is forbidden |
 | Long-task splitting | A single design document | Generates phase specs by requirement, dependency, and review boundaries, then a design spec |
 | Long-task directory | Artifacts scattered across multiple root directories | design.md goes inside the `task_key/` task directory (same directory as goal.md); ordinary `*-design.md` still sits flat in the `specs/` root; the runtime record is a single `progress.md` next to `goal.md` |
-| Large-module design | Directly splits into coding tasks | First passes the architecture-first gate, then freezes module contracts before entering node development |
+| Large-module design | Directly splits into coding tasks | First passes the architecture-first gate, then defines module contracts before entering node development |
 | Requirement follow-up | Ordinary Q&A | bounded grill runs only after phase specs and the design draft are complete; only after grill does spec self-review and Goal review proceed |
 | Sub-agents | General-purpose execution | Five-tier fully-named routing: simple→`luna_worker`, mid→`terra_worker`, high-difficulty implementation→`sol_worker`, lightweight first-pass review→`luna_reviewer` (read-only), complex review/decisions→`sol_advisor` (read-only); each tier has role-specific stop conditions and escalation paths; the main context owns integration and final acceptance |
 | Review | Only reviewed at the end | Layered review of core nodes, phases, and final acceptance; fix, re-test, and re-review before continuing |
-| Context recovery | Relies on conversation history | Uses `progress.md` as a single file to recover the exact next step, with no extra runtime directory |
+| Context recovery | Relies on conversation history | Uses a compact pre-spec decision record during brainstorming, then one `progress.md` during Goal execution |
 | Insufficient tooling | Ad-hoc handling | Passes a tool-readiness gate first; retrieves or implements a minimal MCP/equivalent capability when needed |
-| Evidence | "Tests pass" is enough | Records inputs, versions, environment, commands, paths, hashes, and invalidation conditions to avoid reusing stale evidence |
+| Evidence | "Tests pass" is enough | Records the result-changing inputs needed for review and invalidation, without requiring document hashes |
 | Long-term focus | Relies on constant reminders | PUA self-triggers by scenario (2+ failures, etc.); this skill adds a 20-minute periodic focus calibration (safe boundaries only; pauses during active commands/tests/reviews, re-checks once on resume; silent when nothing changes) |
 | Goal generation | Manually stitch templates | AI generates one task-specific Goal from the reviewed spec, in the user's input language (Chinese input→Simplified Chinese; otherwise English) |
 | User review | Waits for user review | No user-review gate; after writing the spec/Goal package, it goes straight into self-review and implementation |
@@ -146,7 +146,7 @@ During Long/Ultra-long Goal execution, the main context dispatches sub-agents by
 |---|---|---|---|
 | Simple exploration/search/docs/simple implementation | `luna_worker` | gpt-5.6-luna, max | Quickly closes simple packages with minimal diff; hands back when beyond simple |
 | Mid-complexity single-module implementation/testing/routine analysis | `terra_worker` | gpt-5.6-terra, high | Focuses on a single module; escalates to sol for cross-module/high-difficulty |
-| High-difficulty implementation/cross-module changes/risky migrations | `sol_worker` | gpt-5.6-sol, max | Changes carefully, keeps compatibility; stops and reports with evidence when out of package/irreversible |
+| High-difficulty implementation/cross-module changes/risky migrations | `sol_worker` | gpt-5.6-sol, xhigh | Changes carefully, keeps compatibility; stops and reports with evidence when out of package/irreversible |
 | Lightweight first-pass review of simple nodes | `luna_reviewer` | gpt-5.6-luna, max | **Read-only**, checks common-sense bugs/boundaries/static leaks/duplicate interfaces/tests/oversize/perf UIUX/tidiness; escalates deep findings to sol_advisor |
 | Complex architecture/security/compat review and high-impact decisions | `sol_advisor` | gpt-5.6-sol, high | **Read-only**, gives decision advice and evidence, does not implement |
 
@@ -227,6 +227,8 @@ After the spec passes self-check, development begins directly; no writing-plans 
 
 Long Goal and Ultra-long Goal split phase specs by requirement, dependency, and review boundaries — not by evenly slicing file counts. The design spec summarizes end-to-end architecture, phase order, interface contracts, acceptance mapping, and recovery rules, and becomes the source of truth for the implementation phase.
 
+After Long/Ultra classification, derive `task_key`. Before `design.md` exists, create `docs/brainstorming/<task_key>-decision-context.md` when any load-bearing decision, constraint, evidence, blocker, or open question appears. It stores only compact decision context. After compaction, select the active record by task key or unique objective match before continuing. Before Goal generation, fold its active content into design/phases, review coverage, mark it `superseded`, and exclude it from runtime sources.
+
 Each long task uses a stable `task_key = YYYY-MM-DD-<topic>`:
 
 ```text
@@ -238,14 +240,14 @@ docs/superpowers/specs/
     └── progress.md (optional runtime record)
 ```
 
-The design and task directory must use the same `task_key` and record each other's path and version. For same-named tasks, prefer adding a human-readable scope word; only when there is no semantic difference, use a simple sequence like `-02`; the creation date and directory name stay stable across later edits. `<topic>` uses a stable, readable, path-separator-free short topic name (Chinese, letters, digits, and hyphens allowed); it must not use reserved directory names or distinguish only by random characters. File and directory names must not include CRC, SHA, UUID, or random short codes. Hashes are kept as document metadata only when detecting content drift or verifying evidence integrity. `design.md` sits at the same level as the task directory, inside `task_key/`, for discoverability; ordinary `*-design.md` still sits flat in the `specs/` root; phase specs, Goal, and runtime records do not pollute the root. The runtime record is a single optional `progress.md` next to `goal.md`; no extra runtime directories or ledger subtrees are created.
+The design and task directory must use the same `task_key` and record the applicable paths and versions. Any normative content change increments its version and is reviewed as an actual content delta; document hashes are not required. For same-named tasks, prefer adding a human-readable scope word; only when there is no semantic difference, use a simple sequence like `-02`; the creation date and directory name stay stable across later edits. `<topic>` uses a stable, readable, path-separator-free short topic name (Chinese, letters, digits, and hyphens allowed); it must not use reserved directory names or distinguish only by random characters. File and directory names must not include CRC, SHA, UUID, or random short codes. `design.md` sits at the same level as the task directory, inside `task_key/`, for discoverability; ordinary `*-design.md` still sits flat in the `specs/` root; phase specs, Goal, and runtime records do not pollute the root. The runtime record is a single optional `progress.md` next to `goal.md`; no extra runtime directories or ledger subtrees are created.
 
 Before coding each large module, the architecture-first gate must pass:
 
 - First clarify module boundaries, dependency direction, state flow, extension points, resource limits, fault isolation, observability, and rollback;
 - Use the GitHub/authoritative evidence already formed by the kickoff research gate; when new load-bearing unknowns appear, return to the research gate and update the spec;
 - Do not form a single oversized file or oversized function; maintain high cohesion and low coupling by responsibility and rate of change;
-- Advance via phase gates: architecture baseline → contract freeze → core nodes → node review → module integration and stress verification → phase delivery.
+- Advance via phase gates: architecture baseline → module contracts → core nodes → node review → module integration and stress verification → phase delivery.
 
 ### 5. Design Spec gap grill
 
@@ -275,7 +277,7 @@ Although `references/goal-prompt-template.md` keeps its historical filename, it 
 
 The final deliverable is a single ready-to-copy Goal prompt. It must embed the resolved startup file list, portable path-resolution rules, and read order; the user does not need to manually stitch absolute paths or replace placeholders. The pre-generation brainstorming input-read gate and the source set at Goal startup/resume are two independent stages.
 
-The generation phase also maintains a requirement-to-proof coverage relation: every applicable spec item maps to a Goal rule, implementation goal, verification, review, evidence, and end state; missing mappings record `coverage_gap`. Changes to `task_key`, paths, versions, or hashes are identity drift — stop first, compare, fix the bidirectional links between design and the task directory, and re-review. The task spec may add stricter review, evidence, tool, UX, or delivery gates, but cannot lower the skill's safety and authorization boundaries; when acceptance requires a real UI, screenshots, external effects, or current evidence, it must not be downgraded to mock, static pages, headless smoke, synthetic results, or old artifacts.
+The generation phase also maintains a requirement-to-proof coverage relation: every applicable spec item maps to a Goal rule, implementation goal, verification, review, evidence, and end state; missing mappings record `coverage_gap`. A `task_key`, path, or version mismatch means the wrong source set; a normative content change must increment its version, then the actual content delta and affected traceability are reviewed before execution resumes. The task spec may add stricter review, evidence, tool, UX, or delivery gates, but cannot lower the skill's safety and authorization boundaries; when acceptance requires a real UI, screenshots, external effects, or current evidence, it must not be downgraded to mock, static pages, headless smoke, synthetic results, or old artifacts.
 
 The actual Goal of Long Goal and Ultra-long Goal must include the original skill-enable clause: at startup, read `references/caveman/SKILL.md` and `references/pua/SKILL.md` from the currently installed skill directory. PUA self-triggers by scenario (2+ failures, etc.); this skill adds a 20-minute periodic focus calibration — only at safe command/tool boundaries, paused during active commands/tests/reviews, re-checks once on resume. It does not maintain derived profiles, absolute machine paths, or version or SHA-256 registries.
 
@@ -328,7 +330,7 @@ Tasks lasting days or weeks additionally manage:
 - Explicit authorization and write scope (allowed, test-only, read-only, generated, external, and forbidden targets);
 - requirement → implementation → validation → review → evidence traceability;
 - Tool capability records and an evidence index (as supporting records with explicit links);
-- Identity, hash, and invalidation conditions of expensive baselines;
+- Result-changing inputs and invalidation conditions of expensive baselines;
 - Health probes, observation windows, and recovery commands for long-running processes;
 - An independent second-pass check at each phase exit;
 - Final integrity verification and unclosed-item scan.
@@ -391,7 +393,7 @@ docs/superpowers/specs/
     └── progress.md (optional runtime record)
 ```
 
-The filenames are illustrative only; actual paths, date formats, and document metadata always follow the target repo's rules. Different Goals must use a unique, human-readable `task_key`; they cannot reuse another task's directory, nor use CRC/hash to manufacture uniqueness. The runtime record is a single optional `progress.md` next to `goal.md`; no `progress/` subdirectory or ledger tree is created. Work-item inventories, decision records, traceability, and evidence indexes are supporting records inside spec sections or with explicit links, not mandatory directories.
+The filenames are illustrative only; actual paths, date formats, and document metadata always follow the target repo's rules. Different Goals must use a unique, human-readable `task_key`; they cannot reuse another task's directory, nor use CRC/hash to manufacture uniqueness. The runtime record is a single optional `progress.md` next to `goal.md`; no `progress/` subdirectory or ledger tree is created. Work-item inventories, traceability, and evidence indexes remain supporting records inside specs or explicit links. The conditional pre-spec decision record is the only separate `docs/brainstorming/` artifact.
 
 ## Directory structure
 

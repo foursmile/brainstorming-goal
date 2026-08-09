@@ -15,11 +15,13 @@ Resolve these inputs before drafting a candidate Goal:
 
 1. The target Goal name, canonical `task_key`, task-root path, objective, available `progress.md` state, and start-or-resume intent.
 2. Repository/user rules and the current authorization/write-scope matrix.
-3. Reviewed design spec path, version, and content identity.
+3. Reviewed design spec path and version.
 4. Applicable phase specs and their entry/exit gates.
 5. Optional `progress.md` path and version, when present.
 6. The installed brainstorming-goal skill root and its raw `references/caveman/SKILL.md` and `references/pua/SKILL.md` files.
 7. Known blockers, active external state, protected processes, reusable evidence, and the exact first evidence-producing action. If no `progress.md` exists, derive state from the design doc and active phase; do not invent a state file.
+
+If a pre-spec decision record exists, verify every active entry was folded into reviewed design/phases, then mark it `superseded`; never include it in Goal startup/runtime sources.
 
 For the default layout, resolve the candidate path as `docs/superpowers/specs/<task_key>/goal.md`, the design doc as `docs/superpowers/specs/<task_key>/design.md`, and phase specs under `phases/`. Use same-level `progress.md` only when runtime state needs persistence. Do not generate a second prompt tree.
 
@@ -62,7 +64,7 @@ references/pua/SKILL.md。读取 caveman/SKILL.md 后，立即采用其紧凑表
 PUA 自身按其原始技能的场景条件触发（失败 2+ 次、反复微调、准备放弃等）；
 本技能另加周期聚焦校准：每隔 20 分钟触发一次检查，但只在 safe command/tool boundary 执行，
 不打断命令、测试、Review 或授权确认，恢复后补检一次。不得复制成第二套 profile，
-也不要写入绝对路径、版本、SHA-256 或其他来源登记字段。
+也不要写入绝对路径、版本或其他来源登记字段。
 若无法从当前技能副本解析上述文件，先标记 `skill_unavailable`/`blocked`，不得改用旧 profile
 或猜测规则。
 ```
@@ -76,27 +78,30 @@ authorization, evidence, retry caps, blockers, or terminal states.
 
 The generated `goal.md` must carry the following runtime clauses in executable language; merely linking this template or saying “skills read” is insufficient:
 
-- Caveman: after reading the active Caveman skill, immediately adopt its terse expression and keep it until the Goal ends — not just "declare activation". From now on all output follows caveman rules: drop articles/filler/pleasantries/hedging; fragments OK; short synonyms; no decorative tables/emoji; never announce the mode; preserve technical terms, code, commands, and exact error strings verbatim; preserve the user's dominant language. `normal mode`/`stop caveman` disables it; expand to full clarity where sequence, safety, or irreversible action could be misread.
-- PUA: apply PUA's own scenario triggers per its skill (failure 2+, repeated tweaking, about to give up); separately, this skill adds a periodic focus check every 20 minutes, run only at a safe command/tool boundary — pause during commands/tests/reviews, and perform one catch-up check after resuming.
-- Tool/MCP readiness: when network, MCP, browser, or another tool is needed, inspect existing/repository capability first; resolve missing capability before dependent work; record `tool_unavailable`/`blocked` instead of faking evidence or downgrading acceptance.
-- Repeated operations: when the same operation has been performed three times with stable inputs/outputs, fix it into a project-level skill or batch/script workflow, then validate; do not create a skill from a one-off or unstable repetition. Do not reinvent the wheel: search the web/GitHub for maintained libraries or existing solutions before implementing a new capability.
-- Waterfall gates: architecture/research → contract freeze → core implementation/validation → review/fix → integration/stress validation → delivery; do not cross an unmet gate.
-- TDD: changed behavior follows observed RED → minimal GREEN → REFACTOR; preserved behavior uses characterization/regression evidence; non-code work names its alternate validation.
+- Caveman: after reading it, adopt terse expression until Goal ends — not just "declare". Drop articles/filler/hedging; fragments OK; short synonyms; no decorative tables/emoji; never announce mode; preserve technical terms/code/commands/errors verbatim; keep user's dominant language. `normal mode`/`stop caveman` disables; expand full clarity where sequence/safety/irreversible could be misread.
+- PUA: scenario-triggered per its skill (failure 2+/repeated tweaking/about to give up); plus this skill's 20-min focus check at safe command/tool boundary — pause during commands/tests/reviews, catch-up check after resuming.
+- Tool/MCP: probe existing/repo capability first; resolve missing before dependent work; record `tool_unavailable`/`blocked`, never fake evidence or downgrade acceptance.
+- Repeated operations: 3+ same stable operations → fix into a project skill/batch script; search web/GitHub before building anew.
+- No re-answering (every turn, not just resume): a settled question or handled interruption stays closed unless new evidence contradicts; check prior turns/`progress.md` first, then one short line and move on — no re-deriving.
+- Waterfall: architecture/research → core impl/validation → review/fix → integration/stress → delivery; never cross an unmet gate.
+- TDD: changed behavior: observed RED → minimal GREEN → REFACTOR; preserved behavior: characterization/regression; non-code work names alternate validation. Assert real behavior/output (no stub/mock to pass); cover null/empty/boundary/off-by-one/error so wrong impl fails.
+- No over-engineering: design for long-term maintainability/stability/robustness, not speculative complexity; only add structure the current requirement justifies.
+- Language contract: write `goal.md` in the user's input language (Chinese input → Simplified Chinese; otherwise English); commands/paths/code/identifiers verbatim.
 
-Review must mark any missing clause as `issues_found`; do not generate a runnable Goal that leaves these controls implicit.
+Review must mark any missing clause as `issues_found`. Coverage gate must map each of the above clauses (caveman/PUA/tool/repeated/no-re-answering/waterfall/TDD/no-over-engineering/language) to a concrete Goal section; a missing mapping is `coverage_gap`, not implicit success.
 
 ### Goal generation algorithm
 
 Execute in this order; do not skip ahead:
 
-1. Intake: read every user-named artifact in full; resolve actual paths, versions, identity, authorization, and available `progress.md`.
-2. Authority gate: classify user/repository rules, design doc, phase sources, permissions, write scope, non-goals, protected resources, and start/resume authority. Contradiction or identity drift stops generation.
+1. Intake: read every user-named artifact in full; resolve actual paths, versions, authorization, and available `progress.md`.
+2. Authority gate: classify user/repository rules, design doc, phase sources, permissions, write scope, non-goals, protected resources, and start/resume authority. Contradiction stops generation.
 3. Research/tool gate: decide whether current web/GitHub evidence is required; inspect repository/bundled tools first, probe them, then inspect available MCP/tool capability. Resolve missing capability before dependent design; record unavailable capability without faking evidence.
-4. Phase registry gate: read all phase specs during package generation; verify reciprocal identity, dependency order, entry/exit gates, completion-record paths, and requirement traceability. A filename-only list fails.
-5. Architecture/waterfall gate: for applicable large modules, pass architecture/research → contract freeze before drafting implementation steps. Record decomposition, capacity assumptions, rollback, and review gates.
+4. Phase registry gate: read all phase specs during package generation; verify dependency order, entry/exit gates, completion-record paths, and requirement traceability. A filename-only list fails.
+5. Architecture/waterfall gate: for applicable large modules, pass architecture/research before drafting implementation steps. Record decomposition, capacity assumptions, rollback, and review gates.
 6. Generate `goal.md`: include resolved startup set, runtime-control clauses, source precedence, recovery, final reporting, and one explicit section per phase with read path, prerequisite evidence, actions/commands, write scope, outputs, validation, exit gate, completion record, rollback, and blocker state. At later phase entry, read and verify predecessor completion record first.
 7. Coverage gate: build `template_coverage_map` inside `goal.md`, mapping every applicable template section to concrete Goal section and evidence. Mark only genuinely irrelevant sections `not_applicable` with a reason.
-8. Review gate: run semantic review; reject placeholders, omitted clauses, unverifiable commands, missing completion requirements, weak evidence, or false `approved` claims. If independent review is unavailable, label low/medium risk `review_substitute`; high-risk `review_unavailable` remains `blocked`.
+8. Review gate: review correctness/executability/logic/boundaries first — does each step actually achieve its claim with real commands and evidence; coverage-mapping is a light secondary check, not the focus. Reject placeholders, unverifiable commands, missing completion, weak evidence, or false `approved`. If independent review is unavailable, label low/medium risk `review_substitute`; high-risk `review_unavailable` remains `blocked`.
 9. Handoff gate: save review status/evidence in `goal.md` or the user-facing execution record. Only after `approved`, resolve absolute path and output `/goal "<absolute-path-to-goal.md>"`; do not start execution during drafting or unresolved review.
 
 The candidate is a draft until the review below passes. Drafting it does not start or resume the Goal.
@@ -114,16 +119,16 @@ The final Goal must be one self-contained, copyable prompt. It must embed a reso
 4. <progress.md path and version, when present>
 5. <other linked phase/evidence paths required by the active task>
 
-这些文件全部读取并通过身份/一致性检查前，不得实现、派发实现子 Agent、
+这些文件全部读取并通过一致性检查前，不得实现、派发实现子 Agent、
 修改代码或测试、创建替代 spec，或把状态写成已完成。文件缺失、读取失败、
 规范冲突时，先记录 blocked/inconsistent 和解除条件。
 ```
 
-During generation, replace every task-specific placeholder with the actual path and identity. A generated prompt that still contains unresolved task placeholders fails review. The source set is for Goal startup/resume; it does not replace the brainstorming input gate above.
+During generation, replace every task-specific placeholder with the actual path and version. A generated prompt that still contains unresolved task placeholders fails review. The source set is for Goal startup/resume; it does not replace the brainstorming input gate above.
 
 When the user explicitly requires a full startup read, the resolved source set must include every named phase document even if the default staged policy would defer future phases. The Goal must preserve the distinction between the one-time full startup read and later phase-entry reads.
 
-The resolved startup set must use the same `task_key` and reciprocal design/task-root identities. `progress.md`, when used, sits beside `goal.md`.
+The resolved startup set must use the same `task_key`. `progress.md`, when used, sits beside `goal.md`.
 
 ## Upstream research boundary
 
@@ -133,13 +138,13 @@ External research is a brainstorming/spec-generation gate, not a second Goal wor
 
 Review only requirements applicable to the actual target Goal. Mark a category `not_applicable` with evidence instead of injecting generic boilerplate.
 
-### Identity and authority
+### Authority
 
-- Goal name, human-readable `task_key`, objective, artifact paths, versions, and governed metadata identify one task and cannot collide with another Goal. CRC values, hashes, UUIDs, and random tokens never appear in artifact names; required checksums remain metadata only.
-- The design stem and task-directory name resolve to the same canonical `task_key`; `goal.md` records the design path/version/hash, and the design doc records the task-root and Goal paths.
+- Goal name, human-readable `task_key`, objective, artifact paths, and versions identify one task and cannot collide with another Goal.
+- The design stem and task-directory name resolve to the same canonical `task_key`; `goal.md` records the design path and version; phase specs and other sources list path and version only.
+- Any normative design or phase content change increments its version and receives a content-delta review before start/resume; approval follows reviewed content, not file metadata alone.
 - User instructions and repository rules govern authority and safety; the design doc governs normative requirements; optional `progress.md` governs the runtime next action.
 - Apply strictness inheritance: a reviewed task spec may add stricter review, evidence, UX, tool, or delivery gates, but the generated Goal may not weaken the skill's safety, authorization, evidence, recovery, or blocker rules.
-- Detect identity drift whenever a source path, version, governed checksum, `task_key`, or same-level `progress.md` identity changes; stop and review the affected artifacts before continuing.
 - Allowed, test-only, read-only, generated, external, and forbidden targets agree with the source artifacts.
 - Start/resume authority exists for the unchanged scope. New destructive, irreversible, remote, or expanded actions retain their required gate.
 
@@ -152,9 +157,12 @@ For every applicable large module, verify that the candidate Goal points to a pa
 - it records source, version, license/security constraints, and adoption or rejection rationale;
 - it rejects a single **大文件** or **大函数** and requires **高内聚、低耦合** boundaries; 
 - it does **not** over-engineer ahead of time — design for long-term maintainability, stability, and robustness, not speculative complexity; only add structure the current requirement justifies;
-- it uses applicable **瀑布式阶段** gates: architecture baseline and research → contract freeze → core-node implementation and validation → review/fix → integration/stress validation → delivery.
+- it rejects premature abstraction and complexity — abstract/extract only when a concrete repeated need proves it, not on speculation;
+- it writes like a good engineer: minimal readable code that meets the need, no bloat;
+- it reviews like an architect: refactor/simplify flow and cut code when needed.
+- it uses applicable **瀑布式阶段** gates: architecture baseline and research → core-node implementation and validation → review/fix → integration/stress validation → delivery.
 
-The Goal must return to an affected earlier gate when new evidence invalidates a frozen decision.
+The Goal must return to an affected earlier gate when new evidence invalidates a locked decision.
 
 ### Execution, validation, and review
 
@@ -173,13 +181,13 @@ The Goal must return to an affected earlier gate when new evidence invalidates a
 - Missing capability triggers inspection of existing/repository tools, then maintained MCP or equivalent options when necessary. Repository-local capability is implemented only for a real acceptance need or repeated proven gap.
 - Reject acceptance mode downgrade: a requirement for real UI, external effect, screenshot, capture, or current evidence cannot be replaced by a mock, static page, headless smoke test, synthetic result, old artifact, or prose claim.
 - Tool limits, version, security/license implications, recovery, and failure modes are recorded.
-- Evidence records its meaning-changing inputs: source/data snapshot, revision, configuration, environment, process state, seed/time controls, tool/version, command, timestamp, path, hash, and invalidation keys.
-- Identity-matching expensive evidence is reused; it is regenerated only after invalidation or integrity failure.
+- Evidence records the minimum meaning-changing inputs needed to review or invalidate the result: revision, config, command, timestamp, and path; add input, environment, process, seed/time, or tool details only when materially relevant.
+- Expensive evidence is reused only while its recorded relevant inputs still match; regenerate it after invalidation or integrity failure.
 - “Complete,” “correct,” “consistent,” and “lossless” are replaced by measurable criteria, tolerances, evidence, and narrow exceptions.
 
 ### Progress, resume, and focus
 
-- Optional `progress.md` records the active acceptance gate, last evidence, blocker/retry identity, authorization exceptions, and one exact next action.
+- Optional `progress.md` records the active acceptance gate, last evidence, blocker/retry state, authorization exceptions, and one exact next action.
 - After interruption or context compaction, the Goal reads governing rules, design version, optional `progress.md`, and active phase before executing.
 - Previously answered questions and handled interruption messages are not repeated during automatic continuation.
 - Focus calibration follows the resolved bounded profile at safe boundaries, remains silent when direction is unchanged, and pauses in legitimate blocked/waiting states.
@@ -212,16 +220,16 @@ The Goal must return to an affected earlier gate when new evidence invalidates a
 
 ```text
 Goal review status: approved | issues_found | blocked
-Target Goal identity: <name / canonical task_key>
-Candidate artifact: <resolved path / version / hash>
-Source artifacts: <resolved paths / versions / hashes>
+Target Goal: <name / canonical task_key>
+Candidate artifact: <resolved path / version>
+Source artifacts: <resolved paths / versions>
 Findings:
 - <severity / candidate location / governing source / execution impact / correction>
 Main-context rulings:
 - <fixed | rejected_with_evidence | accepted_exception_with_authority | blocked>
 Unresolved blockers:
 - <owner / unblock condition / affected gate>
-Approved target Goal: <resolved path / version / hash, only when approved>
+Approved target Goal: <resolved path / version, only when approved>
 First action: <exact evidence-producing action or command>
 ```
 
