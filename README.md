@@ -202,7 +202,7 @@ Then do the minimal read-only check and route to Simple exit / Ordinary / Long /
 After the minimal read-only check and task routing, immediately decide whether to go online by task complexity:
 
 - Exploratory, open-ended, niche, emerging, time-sensitive, uncertain, or tasks that explicitly need external reference: retrieve authoritative sources during the clarification and design kickoff;
-- Mid-to-large tasks: retrieve maintained similar frameworks, libraries, tools, test facilities, or reference repos on GitHub before the architecture, phase specs, and design spec are frozen;
+- Mid-to-large tasks: retrieve maintained similar frameworks, libraries, tools, test facilities, or reference repos on GitHub before the architecture, phase specs, and design spec are finalized;
 - Simple, stable, local tasks do not go online for form's sake; record `research_not_required` and continue.
 
 Every retrieval must enter the external evidence ledger, recording at least the question, URL/repo, version or commit, access time, conclusion and limitations, license/security/maintenance/version fit, adoption or rejection reason, verification action, and invalidation conditions. **Research evidence is written back to the spec**, design, and traceability, and design decisions changed by external evidence are re-reviewed. Model's prior knowledge can only serve as a hypothesis to verify, not as a claim of having read or summarized model training weights.
@@ -291,7 +291,7 @@ After a node completes, run this closed loop:
 2. Have an independent, minimal-context reviewer do adversarial review (including: is the code over-inflated, can it be expressed more concisely, can existing implementations be reused);
 3. The main context fixes each issue, rejects with evidence, grants an authorization exception, or arbitrates a blocker;
 4. After fixing, run a scoped re-test and any necessary re-review;
-5. Update the optional `progress.md` and evidence identity;
+5. Update the optional `progress.md` and evidence;
 6. Do one phase commit per repo rules, not tied to Git, SVN, or any specific tool;
 7. Enter the next node or next phase only after passing the exit gate.
 
@@ -370,12 +370,12 @@ at once, we must proceed module by module.
 1. **Classifies as Ultra-long Goal**: the task spans weeks, includes compatibility migration, long-term state, stress evidence, and expensive baselines.
 2. **Kickoff online research**: before drawing architecture conclusions, retrieves maintained similar scheduling frameworks and authoritative sources, records version, license, fit limits, and adoption/rejection reasons, and writes conclusions into the research ledger.
 3. **Clarifies load-bearing decisions**: combined with repo facts and online evidence, confirms one by one the old-protocol support scope, idempotency definition, failure semantics, capacity targets, migration rollback, and acceptance evidence.
-4. **Architecture first and forms phase specs**: freezes module boundaries, state machines, storage interfaces, and failure-recovery contracts, then generates phase specs for baseline, contracts, tool preparation, scheduling core, compatibility adapter, migration, and final acceptance.
+4. **Architecture first and forms phase specs**: defines module boundaries, state machines, storage interfaces, and failure-recovery contracts, then generates phase specs for baseline, contracts, tool preparation, scheduling core, compatibility adapter, migration, and final acceptance.
 5. **Generates the design spec**: maps each requirement to implementation nodes, tests, reviewers, evidence, and state, and folds in research conclusions and invalidation conditions.
 6. **Runs bounded grill**: finds "task duplicate-execution tolerance" and "old-client deprecation boundary" still unclear, asks the user item by item and writes back to the relevant specs.
 7. **Runs bounded grill and self-reviews**: after grill write-back, does a spec self-review; then generates the Goal prompt in the user's input language per the `goal-prompt-template.md` contract and reviews to `approved`; the user only copies the final full Goal.
 8. **Executes by node**: first writes a failing test for the idempotent state transition, then implements the minimal logic; an independent reviewer checks races, compatibility, and resource release; the main context fixes and re-tests.
-9. **Records and commits phase results**: writes evidence identity, review conclusions, and the next command into the optional `progress.md`, then commits per phase per repo rules.
+9. **Records and commits phase results**: writes evidence, review conclusions, and the next command into the optional `progress.md`, then commits per phase per repo rules.
 10. **Resumes after interruption**: a new context reads persisted docs by source-of-truth priority, confirms the previous node passed review, and continues from the next stress-test command without re-fetching the un-stale baseline.
 11. **Final acceptance**: checks one by one old-client compatibility, task idempotency, failure recovery, capacity metrics, resource usage, migration rollback, and all inventory IDs; items lacking current evidence stay `unverified`.
 
